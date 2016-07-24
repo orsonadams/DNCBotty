@@ -28,13 +28,20 @@ MAX_EMAILS = 19252 # source : https://wikileaks.org/dnc-emails/
 def detect_missing():
 
 	""" return a generator of all the ids that are not in the emails directory """
+	collected = []
 	try:
 		f = os.walk(DNC_DIR).next()
 		# assumes file names are "x.json" where x can be coerced to an int
 	except IOError:
 		return 
 	else:
-		collected = set(int(x.split(".")[0]) for x in f[2])
+		for x in f[2]: 
+			try:
+				collected.append(int(x.split(".")[0]))
+			except ValueError:
+				# a filename that cant be converted to a int was found in the direcetory skip.
+				continue
+
 	return (ident for ident in xrange(1, MAX_EMAILS) if ident not in collected)
 
 
@@ -43,16 +50,16 @@ def main():
 	
 
 	parser = argparse.ArgumentParser(description="GET DNC EMAILS.")
-	parser.add_argument("--start", dest="start", default=START,
+	parser.add_argument("--start", dest="start", type=int, default=START,
 						help="emailid to start the crawl at")
-	parser.add_argument("--end", dest="end", default= MAX_EMAILS,
+	parser.add_argument("--end", dest="end", type=int, default= MAX_EMAILS,
 						help="emailid to end the crawl at")
-	parser.add_argument("--async", dest="async", const=1, nargs="?", default=ASYNC, 
+	parser.add_argument("--async", dest="async", type=bool, const=True, nargs="?", default=ASYNC, 
 						help="1, 0 for use of async request or not respectively."
 						"Use this if you dont care about the order of the requests")
 	parser.add_argument("--data-dir", dest=DNC_DIR, default=DNC_DIR,
 						help="Give te directory of where to store the emails")
-	parser.add_argument("--use-missing", dest="use_missing", default=True, const=1, nargs="?",
+	parser.add_argument("--use-missing", dest="use_missing", type=bool,default=True, const=True, nargs="?",
 						help="True or False. find the ID of the missing emails from data-dir and"\
 							"request those. --start and --end options will be ignored")
 
@@ -77,19 +84,24 @@ def main():
 	#
 	#
 
-	# try to detect that user wants range warn that user range will trump --use-missing
-	if args.use_missing & args.end < MAX_EMAILS:
-		print("WARNING: Seems like your specifing a range and --use-missing. Using specified range.")
+	# try to detect that user wants range. warn that user range will trump --use-missing
+	if args.use_missing & (args.end < MAX_EMAILS):
+		print("WARNING: Seems like you're specifing a range and --use-missing. Using specified range.")
+		missing = xrange(args.start, args.end+1)
 
-	if args.use_missing & args.async:
-		raise TypeError("can't gaurentee the order of results with async. So missing will be devilishly deceitful")
-	elif args.use_missing  & ( not args.async ):
-		missing = detect_missing()
 	else:
-		if args.end < MAX_EMAILS:
-			max_emails = args.end
-		if args.start:
-			start = args.start
+		#.. case 2: -- use missing and a range arg is provided : ERROR
+		if args.use_missing & args.async:
+			raise TypeError("can't gaurentee the order of results with async. So missing will be devilishly deceitful")
+		#... case 3 : use specifies -- use missing but not async:
+		elif args.use_missing  & ( not args.async ):
+			missing = detect_missing()
+		else:
+			# ... case 4 user specfies range
+			if args.end < MAX_EMAILS:
+				max_emails = args.end
+			if args.start:
+				start = args.start
 		missing = xrange(start, max_emails+1)
 
 	rs = (grequests.get(u, session=s) for u in (URL + str(i) for i in missing))
@@ -110,6 +122,7 @@ def main():
 			try:
 				print("Failed to get email with email id {}".format(i), 
 					file=open(os.path.join(DNC_DIR, "failed_emails.txt"), "w"))
+				print("Request %s failed" %i)
 				# .. if  being throttled ??
 				fail_count+=1
 				if fail_count > MAX_FAIL: 
