@@ -69,10 +69,18 @@ def main():
 		print("OSError while trying to create %s. Quitting" %DNC_DIR)
 		sys.exit(1)
 	
+	#
 	# create async requests using grequests
 	# using map instead of imap so I can match the response to the emailid
 	# NOTE ( if aysnc then you can't (that i know of) recover which requests failed
-	# by matching the file name to the emailID. grequests.map makes it possibe becasuse request are sequential. )
+	# by matching the file name to the emailID. grequests.map makes it possible becasuse request are sequential. )
+	#
+	#
+
+	# try to detect that user wants range warn that user range will trump --use-missing
+	if args.use_missing & args.end < MAX_EMAILS:
+		print("WARNING: Seems like your specifing a range and --use-missing. Using specified range.")
+
 	if args.use_missing & args.async:
 		raise TypeError("can't gaurentee the order of results with async. So missing will be devilishly deceitful")
 	elif args.use_missing  & ( not args.async ):
@@ -86,7 +94,7 @@ def main():
 
 	rs = (grequests.get(u, session=s) for u in (URL + str(i) for i in missing))
 	# async requests with grequests.imap, if user wants.
-	if args.async:
+	if not args.async:
 		resp = grequests.map(rs, size=POOL_SIZE)
 	else:
 		resp = grequests.imap(rs, size=POOL_SIZE)
@@ -102,7 +110,7 @@ def main():
 			try:
 				print("Failed to get email with email id {}".format(i), 
 					file=open(os.path.join(DNC_DIR, "failed_emails.txt"), "w"))
-				# .. if  being throlled ??
+				# .. if  being throttled ??
 				fail_count+=1
 				if fail_count > MAX_FAIL: 
 					sys.exit("responses failed %s consecutive times..Quitting" %MAX_FAIL)
