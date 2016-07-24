@@ -47,11 +47,7 @@ def detect_missing():
 
     return (ident for ident in xrange(1, MAX_EMAILS) if ident not in collected)
 
-
-
 def main():
-
-
     parser = argparse.ArgumentParser(description="GET DNC EMAILS.")
     parser.add_argument("--start", dest="start", type=int, default=START,
                                             help="emailid to start the crawl at")
