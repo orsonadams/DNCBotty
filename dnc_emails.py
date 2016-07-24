@@ -37,7 +37,10 @@ def detect_missing():
 	else:
 		for x in f[2]: 
 			try:
-				collected.append(int(x.split(".")[0]))
+				split = x.split(".")
+				name, kind = split[0], split[1]
+				if kind == "json"
+					collected.append(int(name))
 			except ValueError:
 				# a filename that cant be converted to a int was found in the direcetory skip.
 				continue
