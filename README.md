@@ -1,4 +1,4 @@
-Botty:
+## DNCBotty:
 
 A quick script to the dnc emails leaked by wikileak 
 [WikiLeaks](https://wikileaks.org/dnc-emails)
