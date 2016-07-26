@@ -7,6 +7,7 @@ import grequests
 import json
 import time
 import argparse
+import pdb
 
 
 
@@ -38,7 +39,7 @@ def detect_missing():
             try:
                 split = x.split(".")
                 name, kind = split[0], split[1]
-                if kind == "json"
+                if kind == "json":
                     collected.append(int(name))
             except ValueError:
                 # a filename that cant be converted to a int was found in the direcetory skip.
@@ -92,6 +93,7 @@ def main():
             raise TypeError("can't gaurentee the order of results with async. So missing will be devilishly deceitful")
         #... case 3 : use specifies -- use missing but not async:
         elif args.use_missing  & ( not args.async ):
+            print("Deteting Ids that are missing")
             missing = detect_missing()
         else:
             # ... case 4 user specfies range
@@ -99,13 +101,15 @@ def main():
                 max_emails = args.end
             if args.start:
                 start = args.start
-        missing = xrange(start, max_emails+1)
+                missing = xrange(start, max_emails+1)
 
     rs = (grequests.get(u, session=s) for u in (URL + str(i) for i in missing))
     # async requests with grequests.imap, if user wants.
     if not args.async:
+        print("Querying with non-async")
         resp = grequests.map(rs, size=POOL_SIZE)
     else:
+        print("Querying with async")
         resp = grequests.imap(rs, size=POOL_SIZE)
 
     # loop through responses
