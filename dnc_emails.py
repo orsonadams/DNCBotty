@@ -37,8 +37,7 @@ def detect_missing():
     else:
         for x in f[2]:
             try:
-                split = x.split(".")
-                name, kind = split[0], split[1]
+                name, kind = x.split(".") 
                 if kind == "json":
                     collected.append(int(name))
             except ValueError:

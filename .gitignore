@@ -1,3 +1,5 @@
 /emails
 *.json
 *.txt
+*.bak
+*.pyc
