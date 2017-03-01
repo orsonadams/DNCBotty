@@ -1,4 +1,6 @@
+/data
 /emails
+/notebooks
 *.json
 *.txt
 *.bak
